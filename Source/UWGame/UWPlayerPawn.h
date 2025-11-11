@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "GameFramework/Pawn.h"
-#include "AUWPlayerPawn.generated.h"
+#include "UWPlayerPawn.generated.h"
 
 UCLASS()
 class AUWPlayerPawn : public APawn
