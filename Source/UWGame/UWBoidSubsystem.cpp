@@ -1,5 +1,15 @@
 #include "UWBoidSubsystem.h"
+#include "UWGameLog.h"
 
+UUWBoidSubsystem::UUWBoidSubsystem()
+{
+	 NeighborRadius = 300.f;
+	 SeparationWeight = 1.f;
+	 AlignmentWeight = 1.2f;
+	 CohesionWeight = 1.2f;
+	 MaxSpeed = 400.f;
+	 MaxForce = 100.f;
+}
 
 void UUWBoidSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
@@ -28,6 +38,12 @@ void UUWBoidSubsystem::Tick(float DeltaTime)
 		Boid.Velocity = LimitVectorLength(Boid.Velocity, MaxSpeed);
 		
 		Boid.Position += Boid.Velocity * DeltaTime;
+		
+		if (AActor** BoidActor = BoidActors.Find(Boid.ID))
+		{
+			(*BoidActor)->SetActorLocation(Boid.Position);
+			(*BoidActor)->SetActorRotation(Boid.Velocity.Rotation());
+		}
 	}
 
 	// Update boids data in next frame
@@ -37,6 +53,42 @@ void UUWBoidSubsystem::Tick(float DeltaTime)
 TStatId UUWBoidSubsystem::GetStatId() const
 {
 	RETURN_QUICK_DECLARE_CYCLE_STAT(UUWBoidSubsystem, STATGROUP_Tickables);
+}
+
+bool UUWBoidSubsystem::RegisterActor(AActor* AuwSheep, uint32& RetID)
+{
+	if (AuwSheep == nullptr)
+	{
+		return false;
+	}
+	
+	FBoid NewBoid;
+	NewBoid.ID = ++NextID;
+	NewBoid.Position = AuwSheep->GetActorLocation();
+	NewBoid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), 0.f);
+
+	Boids.Add(NewBoid);
+	BoidActors.Add(NextID, AuwSheep);
+
+	RetID = NextID;
+	return true;
+}
+
+bool UUWBoidSubsystem::UnregisterActor(uint32 ID)
+{
+	BoidActors.Remove(ID);
+	int32 IndexToRemove = Boids.IndexOfByPredicate([ID](const FBoid& Value)
+	{
+		return Value.ID == ID;
+	});
+
+	if (IndexToRemove != INDEX_NONE)
+	{
+		Boids.RemoveAtSwap(IndexToRemove);
+		return true;
+	}
+	
+	return false;
 }
 
 FVector UUWBoidSubsystem::ApplySeparation(const FBoid& Boid)
@@ -165,7 +217,6 @@ FVector UUWBoidSubsystem::ApplyCohesion(const FBoid& Boid)
 	}
     
 	return FVector::ZeroVector;
-
 }
 
 FVector UUWBoidSubsystem::LimitVectorLength(const FVector& Vector, float MaxSize)
@@ -177,4 +228,3 @@ FVector UUWBoidSubsystem::LimitVectorLength(const FVector& Vector, float MaxSize
     
 	return Vector;
 }
-

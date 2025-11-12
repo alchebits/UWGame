@@ -1,6 +1,5 @@
 #pragma once
 
-#include "UWGameLog.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "UWBoidSubsystem.generated.h"
 
@@ -16,7 +15,8 @@ class UUWBoidSubsystem : public UTickableWorldSubsystem
 {
 public:
 	GENERATED_BODY()
-
+	UUWBoidSubsystem();
+	
 	//~ UWorldSubsystem
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	//~ ---
@@ -25,6 +25,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
 	// ---
+
+	bool RegisterActor(AActor* AuwSheep, uint32& RetID);
+	bool UnregisterActor(uint32 ID);
 
 protected:
 	FVector ApplySeparation(const FBoid& Boid);
@@ -35,10 +38,13 @@ protected:
 private:
 	uint32 NextID = 0;
 	TArray<FBoid> Boids;
-	float NeighborRadius = 500.f;
-	float SeparationWeight = 1.f;
-	float AlignmentWeight = 1.f;
-	float CohesionWeight = 2.f;
-	float MaxSpeed = 100.f;
-	float MaxForce = 100.f;
+	float NeighborRadius;
+	float SeparationWeight;
+	float AlignmentWeight;
+	float CohesionWeight;
+	float MaxSpeed;
+	float MaxForce;
+
+	UPROPERTY()
+	TMap<uint32, AActor*> BoidActors;
 };

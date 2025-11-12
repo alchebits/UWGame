@@ -23,9 +23,9 @@ void AUWPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		return;
 	}
 
-	if ( ! WolfInputMappingContext || ! MovementInputAction)
+	if ( ! WolfInputMappingContext || ! MovementInputAction || ! CameraInputAction)
 	{
-		UE_LOG(LogUwGame, Error, TEXT("WolfInputMappingContext is null or MovementInputAction is null"));
+		UE_LOG(LogUwGame, Error, TEXT("WolfInputMappingContext is null or MovementInputAction is null or CameraInputAction is null"));
 		return;
 	}
 	
