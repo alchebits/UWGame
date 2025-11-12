@@ -3,7 +3,7 @@ DerivedDataCache
 Intermediate
 Saved
 RiderLink/
-.DotSettings.user
+*.DotSettings.user
 .vscode
 .vs
 .vsconfig
