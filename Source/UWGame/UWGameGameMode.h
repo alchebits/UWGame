@@ -16,4 +16,7 @@ public:
 
 	UPROPERTY()
 	float GameSessionTimeSeconds = 100.f;
+
+	UPROPERTY()
+	float PointsToNextLevel = 50.f;
 };

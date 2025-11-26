@@ -13,10 +13,6 @@ class AUWPlayerPawn : public ADefaultPawn
 	GENERATED_BODY()
 	
 public:
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	void HandleMovementInput(const FInputActionValue& InputValue);
-	void HandleCameraInput(const FInputActionValue& InputValue);
-
 	// Changing speed to acceleration per second, because now, ADefaultPawn gives us FloatingMovementComponent features with max speed defined there
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float AccelerationPerSecond = 10.f;
@@ -29,5 +25,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "EI")
 	TObjectPtr<UInputAction> CameraInputAction;
+
+	UFUNCTION(BlueprintCallable)
+	void ConsumeSheep(AActor* Actor);
+	
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	void HandleMovementInput(const FInputActionValue& InputValue);
+	void HandleCameraInput(const FInputActionValue& InputValue);
 };
 

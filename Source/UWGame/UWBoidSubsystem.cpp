@@ -1,10 +1,13 @@
 #include "UWBoidSubsystem.h"
+
+#include "ToolWidgetsSlateTypes.h"
 #include "UWGameLog.h"
+#include "UWSheep.h"
 
 UUWBoidSubsystem::UUWBoidSubsystem()
 {
 	 NeighborRadius = 300.f;
-	 SeparationWeight = 1.f;
+	 SeparationWeight = 1.3f;
 	 AlignmentWeight = 1.2f;
 	 CohesionWeight = 1.2f;
 	 MaxSpeed = 400.f;
@@ -41,13 +44,25 @@ void UUWBoidSubsystem::Tick(float DeltaTime)
 		
 		if (AActor** BoidActor = BoidActors.Find(Boid.ID))
 		{
-			(*BoidActor)->SetActorLocation(Boid.Position);
+			FHitResult HitResult;
+			(*BoidActor)->SetActorLocation(Boid.Position, true, &HitResult);
 			(*BoidActor)->SetActorRotation(Boid.Velocity.Rotation());
+
+			DrawDebugSphere( GetWorld(), Boid.Position, 30.f, 32, FColor::Red, false, 0.0f );
+
+			if (HitResult.bBlockingHit)
+			{
+				Boid.Position = (*BoidActor)->GetActorLocation();
+				Boid.Velocity = HitResult.ImpactNormal;
+				Boid.Velocity.Z = 0.f;
+				Boid.Velocity *= MaxSpeed / 2;
+			}
 		}
 	}
 
 	// Update boids data in next frame
 	Boids = CopyBoids;
+	
 }
 
 TStatId UUWBoidSubsystem::GetStatId() const

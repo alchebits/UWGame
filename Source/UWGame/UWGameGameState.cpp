@@ -17,6 +17,12 @@ void AUWGameGameState::Tick(float DeltaSeconds)
 	}
 
 	TimeLeftInSession -= DeltaSeconds;
-	UE_LOG(LogTemp, Warning, TEXT("Time Left: %f"), TimeLeftInSession);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::FromInt(TimeLeftInSession));
+	//UE_LOG(LogTemp, Warning, TEXT("Time Left: %f"), TimeLeftInSession);
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::FromInt(TimeLeftInSession));
+}
+
+void AUWGameGameState::AddPointsToNextLevel(float PointsToAdd)
+{
+	CurrentPointsToNextLevel += PointsToAdd;
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::FromInt(CurrentPointsToNextLevel));
 }

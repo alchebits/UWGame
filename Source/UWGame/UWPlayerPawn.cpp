@@ -2,7 +2,22 @@
 #include "UWGameLog.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "UWGameGameState.h"
+#include "UWSheep.h"
 #include "Kismet/KismetMathLibrary.h"
+
+void AUWPlayerPawn::ConsumeSheep(AActor* Actor)
+{
+	if (AUWSheep* Sheep = Cast<AUWSheep>(Actor))
+	{
+		Sheep->Destroy();
+
+		if (AUWGameGameState* GameState = Cast<AUWGameGameState>(GetWorld()->GetGameState()))
+		{
+			GameState->AddPointsToNextLevel(1);
+		}
+	}
+}
 
 void AUWPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
