@@ -13,6 +13,7 @@ void AUWSheep::BeginPlay()
 	}
 
 	BoidSubsystem->RegisterActor(this, BoidID);
+	OnSheepAloneStateChange(bIsAlone);
 }
 
 void AUWSheep::Destroyed()
@@ -26,4 +27,18 @@ void AUWSheep::Destroyed()
 	}
 	
 	BoidSubsystem->UnregisterActor(BoidID);
+}
+
+void AUWSheep::SetIsSheepAlone(bool bInIsAlone)
+{
+	if (bIsAlone != bInIsAlone)
+	{
+		bIsAlone = bInIsAlone;
+		OnSheepAloneStateChange(bIsAlone);
+	}
+}
+
+bool AUWSheep::CanBeEaten() const
+{
+	return bIsAlone;
 }

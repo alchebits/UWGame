@@ -1,40 +1,48 @@
 #include "UWBoidSubsystem.h"
 
-#include "ToolWidgetsSlateTypes.h"
 #include "UWGameLog.h"
+#include "UWGameSettings.h"
 #include "UWSheep.h"
 
 UUWBoidSubsystem::UUWBoidSubsystem()
 {
-	 NeighborRadius = 300.f;
-	 SeparationWeight = 1.3f;
-	 AlignmentWeight = 1.2f;
-	 CohesionWeight = 1.2f;
-	 MaxSpeed = 400.f;
-	 MaxForce = 100.f;
 }
 
 void UUWBoidSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
+
+	const UUWGameSettings* Settings = GetDefault<UUWGameSettings>();
+	NeighbourRadius = Settings->NeighbourRadius;
+	SeparationWeight = Settings->SeparationWeight;
+	AlignmentWeight = Settings->AlignmentWeight;
+	CohesionWeight = Settings->CohesionWeight;
+	WolfWeight = Settings->WolfWeight;
+	MaxSpeed = Settings->MaxSpeed;
+	MaxForce = Settings->MaxForce;
 }
 
 void UUWBoidSubsystem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogUwGame, Warning, TEXT("Boid World Tick"));
+	const UUWGameSettings* Settings = GetDefault<UUWGameSettings>();
+	
+	WolfPosition = WolfWeakPtr.IsValid() ? WolfWeakPtr->GetActorLocation() : FVector::ZeroVector;
+	WolfPosition.Z = 0.f;
 	
 	TArray<FBoid> CopyBoids= Boids;
 	
 	for (int32 i = 0; i < CopyBoids.Num(); ++i)
 	{
 		FBoid& Boid = CopyBoids[i];
-		
+
+		GatherNeighbours(Boid);
 		FVector SeparationForce = ApplySeparation(Boid) * SeparationWeight;
 		FVector AlignmentForce = ApplyAlignment(Boid) * AlignmentWeight;
 		FVector CohesionForce = ApplyCohesion(Boid) * CohesionWeight;
+		FVector WolfForce = ApplyWolf(Boid) * WolfWeight;
 		
-		FVector Acceleration = SeparationForce + AlignmentForce + CohesionForce;
+		FVector Acceleration = SeparationForce + AlignmentForce + CohesionForce + WolfForce;
 		Acceleration = LimitVectorLength(Acceleration, MaxForce);
 		
 		Boid.Velocity += Acceleration * DeltaTime;
@@ -44,15 +52,30 @@ void UUWBoidSubsystem::Tick(float DeltaTime)
 		
 		if (AActor** BoidActor = BoidActors.Find(Boid.ID))
 		{
+			if (AUWSheep* Sheep = Cast<AUWSheep>(*BoidActor))
+			{
+				Sheep->SetIsSheepAlone(CurrentNeighbours.Num() == 0);
+			}
+			
 			FHitResult HitResult;
-			(*BoidActor)->SetActorLocation(Boid.Position, true, &HitResult);
+			const FVector SheepLocation = (*BoidActor)->GetActorLocation();
+			FVector NewSheepLocation = SheepLocation;
+			NewSheepLocation.X = Boid.Position.X;
+			NewSheepLocation.Y = Boid.Position.Y;
+			
+			(*BoidActor)->SetActorLocation(NewSheepLocation, true, &HitResult);
 			(*BoidActor)->SetActorRotation(Boid.Velocity.Rotation());
 
-			DrawDebugSphere( GetWorld(), Boid.Position, 30.f, 32, FColor::Red, false, 0.0f );
+			if (Settings->bDrawDebugs)
+			{
+				DrawDebugSphere( GetWorld(), Boid.Position, 30.f, 32, FColor::Red, false, 0.0f );
+				DrawDebugCircle( GetWorld(), SheepLocation, NeighbourRadius, 50, FColor::Green, false, -1.f, 0, 0.f, FVector(0.f, 1.f, 0.f), FVector(1.f, 0.f, 0.f), true);	
+			}
 
 			if (HitResult.bBlockingHit)
 			{
 				Boid.Position = (*BoidActor)->GetActorLocation();
+				Boid.Position.Z = 0.f;
 				Boid.Velocity = HitResult.ImpactNormal;
 				Boid.Velocity.Z = 0.f;
 				Boid.Velocity *= MaxSpeed / 2;
@@ -70,6 +93,17 @@ TStatId UUWBoidSubsystem::GetStatId() const
 	RETURN_QUICK_DECLARE_CYCLE_STAT(UUWBoidSubsystem, STATGROUP_Tickables);
 }
 
+bool UUWBoidSubsystem::RegisterWolf(AActor* Wolf)
+{
+	if (Wolf != nullptr)
+	{
+		WolfWeakPtr = Wolf;
+		return true;
+	}
+
+	return false;
+}
+
 bool UUWBoidSubsystem::RegisterActor(AActor* AuwSheep, uint32& RetID)
 {
 	if (AuwSheep == nullptr)
@@ -80,6 +114,7 @@ bool UUWBoidSubsystem::RegisterActor(AActor* AuwSheep, uint32& RetID)
 	FBoid NewBoid;
 	NewBoid.ID = ++NextID;
 	NewBoid.Position = AuwSheep->GetActorLocation();
+	NewBoid.Position.Z = 0.f;
 	NewBoid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), 0.f);
 
 	Boids.Add(NewBoid);
@@ -106,40 +141,53 @@ bool UUWBoidSubsystem::UnregisterActor(uint32 ID)
 	return false;
 }
 
-FVector UUWBoidSubsystem::ApplySeparation(const FBoid& Boid)
+void UUWBoidSubsystem::GatherNeighbours(const FBoid& Boid)
 {
-	FVector SteeringForce = FVector::ZeroVector;
-	int32 NeighborCount = 0;
-    
+	CurrentNeighbours.Reset();
+	
 	for (const FBoid& OtherBoid : Boids)
 	{
 		if (OtherBoid.ID == Boid.ID)
 		{
 			continue;
 		}
-        
-		float Distance = FVector::Distance(Boid.Position, OtherBoid.Position);
-        
-		if (Distance < NeighborRadius)
-		{
-			// repulsion force is stronger if closer to another boid
-			FVector RepulsionDirection = Boid.Position - OtherBoid.Position;
-            
-			if (!RepulsionDirection.IsNearlyZero())
-			{
-				RepulsionDirection.Normalize();
 
-				RepulsionDirection *= (NeighborRadius / FMath::Max(Distance, 1.0f));
-				SteeringForce += RepulsionDirection;
-			}
-            
-			NeighborCount++;
+		float Distance = FVector::Distance(Boid.Position, OtherBoid.Position);
+		if (Distance < NeighbourRadius)
+		{
+			FBoidNeighbour Neighbour;
+			Neighbour.Distance = Distance;
+			Neighbour.BoidRawPtr = &OtherBoid;
+			
+			CurrentNeighbours.Add(Neighbour);
+		}
+	}
+}
+
+FVector UUWBoidSubsystem::ApplySeparation(const FBoid& Boid)
+{
+	FVector SteeringForce = FVector::ZeroVector;
+    
+	for (const FBoidNeighbour& Neighbour : CurrentNeighbours)
+	{
+		const FBoid& OtherBoid = *Neighbour.BoidRawPtr;
+		float Distance = Neighbour.Distance;
+		
+		// repulsion force is stronger if closer to another boid
+		FVector RepulsionDirection = Boid.Position - OtherBoid.Position;
+        
+		if (!RepulsionDirection.IsNearlyZero())
+		{
+			RepulsionDirection.Normalize();
+
+			RepulsionDirection *= (NeighbourRadius / FMath::Max(Distance, 1.0f));
+			SteeringForce += RepulsionDirection;
 		}
 	}
     
-	if (NeighborCount > 0)
+	if (CurrentNeighbours.Num() > 0)
 	{
-		SteeringForce /= NeighborCount;
+		SteeringForce /= CurrentNeighbours.Num();
         
 		if (!SteeringForce.IsNearlyZero())
 		{
@@ -157,27 +205,17 @@ FVector UUWBoidSubsystem::ApplySeparation(const FBoid& Boid)
 FVector UUWBoidSubsystem::ApplyAlignment(const FBoid& Boid)
 {
 	FVector AverageVelocity = FVector::ZeroVector;
-	int32 NeighborCount = 0;
     
-	for (const FBoid& OtherBoid : Boids)
+	for (const FBoidNeighbour& Neighbour : CurrentNeighbours)
 	{
-		if (OtherBoid.ID == Boid.ID)
-		{
-			continue;
-		}
-        
-		float Distance = FVector::Distance(Boid.Position, OtherBoid.Position);
-        
-		if (Distance < NeighborRadius)
-		{
-			AverageVelocity += OtherBoid.Velocity;
-			NeighborCount++;
-		}
+		const FBoid& OtherBoid = *Neighbour.BoidRawPtr;
+
+		AverageVelocity += OtherBoid.Velocity;
 	}
     
-	if (NeighborCount > 0)
+	if (CurrentNeighbours.Num() > 0)
 	{
-		AverageVelocity /= NeighborCount;
+		AverageVelocity /= CurrentNeighbours.Num();
         
 		if (!AverageVelocity.IsNearlyZero())
 		{
@@ -196,27 +234,17 @@ FVector UUWBoidSubsystem::ApplyAlignment(const FBoid& Boid)
 FVector UUWBoidSubsystem::ApplyCohesion(const FBoid& Boid)
 {
 	FVector CenterOfMass = FVector::ZeroVector;
-	int32 NeighborCount = 0;
     
-	for (const FBoid& OtherBoid : Boids)
+	for (const FBoidNeighbour& Neighbour : CurrentNeighbours)
 	{
-		if (OtherBoid.ID == Boid.ID)
-		{
-			continue;
-		}
-        
-		float Distance = FVector::Distance(Boid.Position, OtherBoid.Position);
-        
-		if (Distance < NeighborRadius)
-		{
-			CenterOfMass += OtherBoid.Position;
-			NeighborCount++;
-		}
+		const FBoid& OtherBoid = *Neighbour.BoidRawPtr;
+		
+		CenterOfMass += OtherBoid.Position;
 	}
     
-	if (NeighborCount > 0)
+	if (CurrentNeighbours.Num() > 0)
 	{
-		CenterOfMass /= NeighborCount;
+		CenterOfMass /= CurrentNeighbours.Num();
         
 		FVector DesiredVelocity = CenterOfMass - Boid.Position;
         
@@ -231,6 +259,23 @@ FVector UUWBoidSubsystem::ApplyCohesion(const FBoid& Boid)
 		}
 	}
     
+	return FVector::ZeroVector;
+}
+
+FVector UUWBoidSubsystem::ApplyWolf(const FBoid& Boid)
+{
+	float Distance = FVector::Distance(Boid.Position, WolfPosition);
+
+	if (Distance < NeighbourRadius)
+	{
+		FVector SteeringForce = Boid.Position - WolfPosition;
+		SteeringForce.Normalize();
+		SteeringForce *= MaxSpeed;
+		SteeringForce = LimitVectorLength(SteeringForce, MaxForce);
+		
+		return SteeringForce;
+	}
+
 	return FVector::ZeroVector;
 }
 

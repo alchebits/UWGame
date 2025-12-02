@@ -13,15 +13,16 @@ public:
 	// AActor interface
 	virtual void Tick(float DeltaSeconds) override;
 	// ---
-
-	void AddPointsToNextLevel(float PointsToAdd);
 	
 protected:
 	UPROPERTY()
 	float TimeLeftInSession = 0.f;
 
 	UPROPERTY()
-	float CurrentPointsToNextLevel = 0.f;
+	float CurrentScore = 0.f;
+
+	UPROPERTY()
+	int32 CurrentLevel = 1;
 	
 	friend class AUWGameGameMode;
 };

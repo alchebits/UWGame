@@ -8,7 +8,15 @@ public class UWGame : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core", 
+			"CoreUObject", 
+			"DeveloperSettings",
+			"Engine",
+			"EnhancedInput",
+			"InputCore",
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

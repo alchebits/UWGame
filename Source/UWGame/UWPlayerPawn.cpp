@@ -2,19 +2,42 @@
 #include "UWGameLog.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "UWBoidSubsystem.h"
+#include "UWGameGameMode.h"
 #include "UWGameGameState.h"
 #include "UWSheep.h"
 #include "Kismet/KismetMathLibrary.h"
+
+void AUWPlayerPawn::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UUWBoidSubsystem* BoidSubsystem = GetWorld()->GetSubsystem<UUWBoidSubsystem>();
+	if ( ! BoidSubsystem)
+	{
+		return;
+	}
+
+	BoidSubsystem->RegisterWolf(this);
+}
+
+void AUWPlayerPawn::Destroyed()
+{
+	Super::Destroyed();
+}
 
 void AUWPlayerPawn::ConsumeSheep(AActor* Actor)
 {
 	if (AUWSheep* Sheep = Cast<AUWSheep>(Actor))
 	{
-		Sheep->Destroy();
-
-		if (AUWGameGameState* GameState = Cast<AUWGameGameState>(GetWorld()->GetGameState()))
+		if (Sheep->CanBeEaten())
 		{
-			GameState->AddPointsToNextLevel(1);
+			Sheep->Destroy();
+
+			if (AUWGameGameMode* GameMode = Cast<AUWGameGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				GameMode->IncreaseScore(1.f);
+			}	
 		}
 	}
 }

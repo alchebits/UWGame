@@ -26,6 +26,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "EI")
 	TObjectPtr<UInputAction> CameraInputAction;
 
+	//~ AActor
+	virtual void BeginPlay() override;
+	virtual void Destroyed() override;
+	//~ ---
+	
 	UFUNCTION(BlueprintCallable)
 	void ConsumeSheep(AActor* Actor);
 	
