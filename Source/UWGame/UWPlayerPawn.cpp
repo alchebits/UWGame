@@ -103,6 +103,12 @@ void AUWPlayerPawn::HandleMovementInput(const FInputActionValue& InputValue)
 
 			AddMovementInput(ForwardVector, 1.f, false);
 			AddMovementInput(RightVector, 1.f, false);
+
+			FVector CharacterDirection = ForwardVector + RightVector;
+			CharacterDirection.Z = 0.f;
+			CharacterDirection.Normalize();
+			
+			SetActorRotation(CharacterDirection.Rotation());
 			break;
 		}
 	default:
