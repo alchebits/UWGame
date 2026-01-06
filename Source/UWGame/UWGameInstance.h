@@ -1,6 +1,9 @@
 #pragma once
 
+#include "UWGameUtils.h"
 #include "Engine/GameInstance.h"
+#include "UWSaveGame.h"
+
 #include "UWGameInstance.generated.h"
 
 UCLASS()
@@ -15,18 +18,51 @@ public:
 	float GetScoreSum() const;
 
 	UFUNCTION(BlueprintCallable)
-	float GetHighestScore() const;
+	float GetTimeLeftInLevel() const;
 
 	UFUNCTION(BlueprintCallable)
-	void SetScoreSum(float NewScoreSum);
+	void StartNewGame();
 
 	UFUNCTION(BlueprintCallable)
-	void SetHighestScore(float NewHighestScore);
+	void SetPlayerName(FString InPlayerName);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FScoreRow> GetAllScores() const;
+	
+	bool OpenLevel(int32 LevelNum);
+	
+	void AddScore(float ScoreToAdd);
+
+	void FinishGame();
+	
+	void TimeOut();
+
+	FLevelRulesData GetCurrentLevelRules() const;
+
+protected:
+	UFUNCTION(BlueprintImplementableEvent)
+	void OpenHighScoreMenu();
+	
+	void LoadGameData();
+	
+	void SaveGameData();
 	
 protected:
 	UPROPERTY()
-	float ScoreSum = 0.f;
+	FString PlayerName;
 
 	UPROPERTY()
-	float HighestScore = 0.f;
+	float ScoreSum = 0.f;
+	
+	UPROPERTY()
+	int32 CurrentLevelNum = 1;
+
+	UPROPERTY()
+	FLevelRulesData CurrentLevelRules;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UDataTable> GameSettingsTable = nullptr;
+
+	UPROPERTY()
+	TObjectPtr<UUWSaveGame> SaveGameObject = nullptr;
 };

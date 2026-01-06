@@ -14,6 +14,7 @@ void UUWBoidSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 
 	const UUWGameSettings* Settings = GetDefault<UUWGameSettings>();
 	NeighbourRadius = Settings->NeighbourRadius;
+	NeighbourWolfRadius = Settings->NeighbourWolfRadius;
 	SeparationWeight = Settings->SeparationWeight;
 	AlignmentWeight = Settings->AlignmentWeight;
 	CohesionWeight = Settings->CohesionWeight;
@@ -104,7 +105,7 @@ bool UUWBoidSubsystem::RegisterWolf(AActor* Wolf)
 	return false;
 }
 
-bool UUWBoidSubsystem::RegisterActor(AActor* AuwSheep, uint32& RetID)
+bool UUWBoidSubsystem::RegisterSheep(AUWSheep* AuwSheep, uint32& RetID)
 {
 	if (AuwSheep == nullptr)
 	{
@@ -117,6 +118,10 @@ bool UUWBoidSubsystem::RegisterActor(AActor* AuwSheep, uint32& RetID)
 	NewBoid.Position.Z = 0.f;
 	NewBoid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), 0.f);
 
+	const UUWGameSettings* Settings = GetDefault<UUWGameSettings>();
+	NewBoid.SheepPoints = FMath::RandRange(Settings->SheepPointsMin, Settings->SheepPointsMax);
+	AuwSheep->SetSheepPoints(NewBoid.SheepPoints);
+	
 	Boids.Add(NewBoid);
 	BoidActors.Add(NextID, AuwSheep);
 
@@ -266,12 +271,12 @@ FVector UUWBoidSubsystem::ApplyWolf(const FBoid& Boid)
 {
 	float Distance = FVector::Distance(Boid.Position, WolfPosition);
 
-	if (Distance < NeighbourRadius)
+	if (Distance < NeighbourWolfRadius)
 	{
 		FVector SteeringForce = Boid.Position - WolfPosition;
 		SteeringForce.Normalize();
 		SteeringForce *= MaxSpeed;
-		SteeringForce = LimitVectorLength(SteeringForce, MaxForce);
+		// SteeringForce = LimitVectorLength(SteeringForce, MaxForce);
 		
 		return SteeringForce;
 	}

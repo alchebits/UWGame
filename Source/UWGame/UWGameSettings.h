@@ -15,6 +15,9 @@ public:
 	float NeighbourRadius = 300.f;
 
 	UPROPERTY(Config, EditAnywhere)
+	float NeighbourWolfRadius = 500.f;
+	
+	UPROPERTY(Config, EditAnywhere)
 	float SeparationWeight = 1.3f;
 
 	UPROPERTY(Config, EditAnywhere)
@@ -34,4 +37,10 @@ public:
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bDrawDebugs = true;
+
+	UPROPERTY(Config, EditAnywhere)
+	int32 SheepPointsMin = 1;
+
+	UPROPERTY(Config, EditAnywhere)
+	int32 SheepPointsMax = 10;
 };

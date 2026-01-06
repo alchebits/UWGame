@@ -3,11 +3,14 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "UWBoidSubsystem.generated.h"
 
+class AUWSheep;
+
 struct FBoid
 {
 	uint32 ID;
 	FVector Position;
 	FVector Velocity;
+	uint16 SheepPoints;
 };
 
 struct FBoidNeighbour
@@ -33,7 +36,7 @@ public:
 	// ---
 
 	bool RegisterWolf(AActor* Wolf);
-	bool RegisterActor(AActor* Sheep, uint32& RetID);
+	bool RegisterSheep(AUWSheep* Sheep, uint32& RetID);
 	bool UnregisterActor(uint32 ID);
 
 protected:
@@ -49,7 +52,8 @@ private:
 	TArray<FBoid> Boids;
 	TArray<FBoidNeighbour> CurrentNeighbours;
 	FVector WolfPosition = FVector::ZeroVector;
-	
+
+	float NeighbourWolfRadius = 500.f;
 	float NeighbourRadius = 300.f;
 	float SeparationWeight = 1.3f;
 	float AlignmentWeight = 1.2f;

@@ -5,6 +5,7 @@
 #include "UWBoidSubsystem.h"
 #include "UWGameGameMode.h"
 #include "UWGameGameState.h"
+#include "UWGameInstance.h"
 #include "UWSheep.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -33,11 +34,12 @@ void AUWPlayerPawn::ConsumeSheep(AActor* Actor)
 		if (Sheep->CanBeEaten())
 		{
 			Sheep->Destroy();
-
-			if (AUWGameGameMode* GameMode = Cast<AUWGameGameMode>(GetWorld()->GetAuthGameMode()))
+			
+			if (UUWGameInstance* GameInst = Cast<UUWGameInstance>(GetGameInstance()))
 			{
-				GameMode->IncreaseScore(1.f);
-			}	
+				GameInst->AddScore(Sheep->GetSheepPoints());
+				UE_LOG(LogUwGame, Log, TEXT("Score = %f"), GameInst->GetScoreSum());
+			}
 		}
 	}
 }

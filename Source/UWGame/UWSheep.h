@@ -19,6 +19,16 @@ public:
 
 	void SetIsSheepAlone(bool bInIsAlone);
 	bool CanBeEaten() const;
+
+	void SetSheepPoints(int32 NewValue);
+	int32 GetSheepPoints() const;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnSheepPointsChanged(int32 NewValue);
+	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sheep")
+	int32 SheepPoints = 1;
 	
 private:
 	uint32 BoidID = 0;

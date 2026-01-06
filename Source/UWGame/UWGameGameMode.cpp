@@ -1,7 +1,6 @@
 ﻿#include "UWGameGameMode.h"
 #include "UWGameGameState.h"
 #include "UWGameInstance.h"
-#include "UWGameSettings.h"
 
 AUWGameGameMode::AUWGameGameMode()
 {
@@ -17,10 +16,12 @@ void AUWGameGameMode::InitGameState()
 
 	UUWGameInstance* UWGameInstance = Cast<UUWGameInstance>(GetGameInstance());
 	AUWGameGameState* UWGameState = Cast<AUWGameGameState>(GameState);
+	
 	if (UWGameInstance && UWGameState)
 	{
-		UWGameState->TimeLeftInSession = GameSessionTimeSeconds;
-		UWGameState->CurrentScore = UWGameInstance->GetScoreSum();
+		FLevelRulesData CurrentLevelRules = UWGameInstance->GetCurrentLevelRules();
+		UWGameState->TimeLeftSeconds = CurrentLevelRules.LevelTimeSeconds;
+		UWGameState->bTimeOut = false;
 	}
 }
 
@@ -30,34 +31,24 @@ void AUWGameGameMode::Tick(float DeltaSeconds)
 
 	if (AUWGameGameState* UWGameState = Cast<AUWGameGameState>(GameState))
 	{
-		if (UWGameState->TimeLeftInSession <= 0)
+		if (UWGameState->TimeLeftSeconds <= 0)
 		{
-			EndGame();
+			if (UWGameState->bTimeOut == false)
+			{
+				if (UUWGameInstance* UWGameInstance = Cast<UUWGameInstance>(GetGameInstance()))
+				{
+					UWGameInstance->TimeOut();
+				}
+			}
+			UWGameState->bTimeOut = true;
 			return;
 		}
 
-		UWGameState->TimeLeftInSession -= DeltaSeconds;
-	}
-}
+		UWGameState->TimeLeftSeconds -= DeltaSeconds;
 
-void AUWGameGameMode::IncreaseScore(float ScoreToSum)
-{
-	if (AUWGameGameState* UWGameState = Cast<AUWGameGameState>(GameState))
-	{
-		UWGameState->CurrentScore += ScoreToSum;
-
-		const UUWGameSettings* Settings = GetDefault<UUWGameSettings>();
-		if (Settings->bDrawDebugs)
+		if (UUWGameInstance* UWGameInstance = Cast<UUWGameInstance>(GetGameInstance()))
 		{
-			const FString Message = FString::Printf(TEXT("Score = %f"), UWGameState->CurrentScore);
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, Message);	
-		}
-
-		OnScoreChanged(UWGameState->CurrentScore);
-		
-		if (UWGameState->CurrentScore >= ScoreToNextLevel)
-		{
-			OpenNextLevel(UWGameState->CurrentLevel + 1);
+			UWGameState->CurrentScore = UWGameInstance->GetScoreSum();
 		}
 	}
 }

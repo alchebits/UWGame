@@ -10,19 +10,18 @@ class UWGAME_API AUWGameGameState : public AGameStateBase
 public:
 	AUWGameGameState();
 
-	// AActor interface
-	virtual void Tick(float DeltaSeconds) override;
-	// ---
+	float GetTimeLeftSeconds() const;
+	float GetCurrentScore() const;
 	
 protected:
 	UPROPERTY()
-	float TimeLeftInSession = 0.f;
+	float TimeLeftSeconds = 0.f;
 
 	UPROPERTY()
 	float CurrentScore = 0.f;
-
+	
 	UPROPERTY()
-	int32 CurrentLevel = 1;
+	bool bTimeOut = false;
 	
 	friend class AUWGameGameMode;
 };

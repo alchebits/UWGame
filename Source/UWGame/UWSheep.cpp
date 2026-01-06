@@ -12,7 +12,7 @@ void AUWSheep::BeginPlay()
 		return;
 	}
 
-	BoidSubsystem->RegisterActor(this, BoidID);
+	BoidSubsystem->RegisterSheep(this, BoidID);
 	OnSheepAloneStateChange(bIsAlone);
 }
 
@@ -41,4 +41,16 @@ void AUWSheep::SetIsSheepAlone(bool bInIsAlone)
 bool AUWSheep::CanBeEaten() const
 {
 	return bIsAlone;
+}
+
+void AUWSheep::SetSheepPoints(int32 NewValue)
+{
+	SheepPoints = NewValue;
+	
+	OnSheepPointsChanged(SheepPoints);
+}
+
+int32 AUWSheep::GetSheepPoints() const
+{
+	return SheepPoints;
 }
