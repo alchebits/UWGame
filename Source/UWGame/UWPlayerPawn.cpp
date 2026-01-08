@@ -27,7 +27,7 @@ void AUWPlayerPawn::Destroyed()
 	Super::Destroyed();
 }
 
-void AUWPlayerPawn::ConsumeSheep(AActor* Actor)
+bool AUWPlayerPawn::ConsumeSheep(AActor* Actor)
 {
 	if (AUWSheep* Sheep = Cast<AUWSheep>(Actor))
 	{
@@ -38,10 +38,13 @@ void AUWPlayerPawn::ConsumeSheep(AActor* Actor)
 			if (UUWGameInstance* GameInst = Cast<UUWGameInstance>(GetGameInstance()))
 			{
 				GameInst->AddScore(Sheep->GetSheepPoints());
-				UE_LOG(LogUwGame, Log, TEXT("Score = %f"), GameInst->GetScoreSum());
 			}
+
+			return true;
 		}
 	}
+
+	return false;
 }
 
 void AUWPlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

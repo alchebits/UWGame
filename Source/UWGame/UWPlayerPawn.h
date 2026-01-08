@@ -32,7 +32,7 @@ public:
 	//~ ---
 	
 	UFUNCTION(BlueprintCallable)
-	void ConsumeSheep(AActor* Actor);
+	bool ConsumeSheep(AActor* Actor);
 	
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	void HandleMovementInput(const FInputActionValue& InputValue);
